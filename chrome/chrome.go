@@ -48,8 +48,8 @@ type ScreenSize struct {
 }
 
 // New creates a new browser instance with the given context.
-func New(ctx context.Context) (b *Browser, err error) {
-	b = &Browser{
+func New(ctx context.Context) (*Browser, error) {
+	b := &Browser{
 		Top:     0,
 		Bottom:  0,
 		Left:    0,
@@ -57,7 +57,7 @@ func New(ctx context.Context) (b *Browser, err error) {
 		Client:  &cdp.Client{},
 		Context: ctx,
 	}
-	err = b.startChrome()
+	err := b.startChrome()
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func New(ctx context.Context) (b *Browser, err error) {
 func (b *Browser) startChrome() error {
 	// Execute the following command to start Chrome with the default arguments:
 	// google-chrome --remote-debugging-port=9222 --disable-notifications --kiosk
-	var startArgs []string = []string{"--remote-debugging-port=9222", "--disable-notification", "--kiosk"}
+	var startArgs []string = []string{"--remote-debugging-port=9222", "--disable-notifications", "--kiosk"}
 
 	var chromeBinary string = "google-chrome"
 

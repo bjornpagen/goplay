@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/bjornpagen/goplay/chrome"
-	"github.com/bjornpagen/goplay/sites/github"
+	site "github.com/bjornpagen/goplay/sites/incolumitas"
 
 	"github.com/go-vgo/robotgo"
 )
@@ -32,7 +32,7 @@ func run() error {
 	}
 
 	// Navigate to GitHub.
-	err = c.Navigate("https://github.com")
+	err = c.Navigate(site.Url)
 	if err != nil {
 		return err
 	}
@@ -40,8 +40,8 @@ func run() error {
 	// Sleep for a random duration between 2 and 4 seconds.
 	time.Sleep(time.Duration(2+rand.Intn(2)) * time.Second)
 
-	// Get the DomRect for the header.
-	rect, err := c.GetBoundingClientRect(github.CSSSelectors["header"])
+	// Get the DomRect for the username input.
+	rect, err := c.GetBoundingClientRect(site.CSSSelectors["userNameInput"])
 	if err != nil {
 		return err
 	}
