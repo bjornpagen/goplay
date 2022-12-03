@@ -26,13 +26,13 @@ func run() error {
 	defer cancel()
 
 	// Start Chrome.
-	c, err := chrome.StartChrome(ctx, cancel)
+	c, err := chrome.New(ctx)
 	if err != nil {
 		return err
 	}
 
 	// Navigate to GitHub.
-	err = chrome.Navigate(ctx, c, "https://github.com")
+	err = c.Navigate("https://github.com")
 	if err != nil {
 		return err
 	}
@@ -40,23 +40,14 @@ func run() error {
 	// Sleep for a random duration between 2 and 4 seconds.
 	time.Sleep(time.Duration(2+rand.Intn(2)) * time.Second)
 
-	// Evaluate GitHub's title.
-	title, err := chrome.Evaluate(ctx, c, "document.title")
-	if err != nil {
-		return err
-	}
-
-	// Print the title.
-	fmt.Printf("Title: %s\n", title)
-
 	// Get the DomRect for the header.
-	rect, err := chrome.GetBoundingClientRect(ctx, c, github.CSSSelectors["header"])
+	rect, err := c.GetBoundingClientRect(github.CSSSelectors["header"])
 	if err != nil {
 		return err
 	}
 
 	// Get the center of the header.
-	x, y, err := chrome.GetIntCoordinates(rect)
+	x, y, err := c.GetIntCoordinates(rect)
 	if err != nil {
 		return err
 	}
@@ -67,8 +58,14 @@ func run() error {
 		return fmt.Errorf("failed to move cursor")
 	}
 
-	// Move the cursor to the top of the browsing window.
-	res = robotgo.MoveSmooth(x, int(chrome.Deadzone))
+	// Move the cursor to the bottom of the browsing window.
+	res = robotgo.MoveSmooth(x, int(c.Bottom))
+	if !res {
+		return fmt.Errorf("failed to move cursor")
+	}
+
+	// Move the cursor to the center of the browsing window.
+	res = robotgo.MoveSmooth(int(c.Left+c.Right)/2, int(c.Top+c.Bottom)/2)
 	if !res {
 		return fmt.Errorf("failed to move cursor")
 	}
