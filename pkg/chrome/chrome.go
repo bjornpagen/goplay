@@ -19,13 +19,17 @@ import (
 
 // Browser is a struct that contains all the top level variables.
 type Browser struct {
-	Top     float64
-	Bottom  float64
-	Left    float64
-	Right   float64
+	Window  Window
 	Client  *cdp.Client
 	Context context.Context
 	options *options
+}
+
+type Window struct {
+	Top    float64
+	Bottom float64
+	Left   float64
+	Right  float64
 }
 
 // DOMRect is a struct representing a DOMRect.
@@ -49,15 +53,15 @@ type ScreenSize struct {
 }
 
 type options struct {
-	headless *bool
+	mouse *bool
 }
 
 type Option func(option *options) error
 
-func WithHeadless() Option {
+func EnableMouse() Option {
 	return func(option *options) error {
-		headless := true
-		option.headless = &headless
+		mouse := true
+		option.mouse = &mouse
 		return nil
 	}
 }
@@ -72,34 +76,19 @@ func New(ctx context.Context, opts ...Option) (*Browser, error) {
 		}
 	}
 
-	b := &Browser{
-		Top:     0,
-		Bottom:  0,
-		Left:    0,
-		Right:   0,
+	return &Browser{
+		Window:  Window{},
 		Client:  &cdp.Client{},
 		Context: ctx,
 		options: option,
-	}
-	err := b.startChrome()
-	if err != nil {
-		return nil, err
-	}
-
-	return b, nil
+	}, nil
 }
 
-// startChrome starts a new Chrome instance and returns a cdp.Client.
-func (b *Browser) startChrome() error {
+// Start starts a new Chrome instance and returns a cdp.Client.
+func (b *Browser) Start() error {
 	// Execute the following command to start Chrome with the default arguments:
 	// google-chrome --remote-debugging-port=9222 --disable-notifications --kiosk
 	var startArgs []string = []string{"--remote-debugging-port=9222", "--disable-notifications", "--kiosk"}
-
-	// Add the --headless flag if the headless option is set.
-	if b.options.headless != nil && *b.options.headless {
-		startArgs = append(startArgs, "--headless")
-	}
-
 	var chromeBinary string = "google-chrome"
 
 	// If we're on macOS, use the default Chrome.app.
@@ -140,7 +129,6 @@ func (b *Browser) startChrome() error {
 	// Create a new cdp.Client.
 	b.Client = cdp.NewClient(conn)
 
-	// Enable the Page domain.
 	err = b.Client.Page.Enable(b.Context)
 	if err != nil {
 		return err
@@ -158,6 +146,10 @@ func (b *Browser) startChrome() error {
 		return err
 	}
 
+	if b.options.mouse != nil && !*b.options.mouse {
+		return nil
+	}
+
 	// Get the window size.
 	w, err := b.GetWindowSize()
 	if err != nil {
@@ -171,21 +163,23 @@ func (b *Browser) startChrome() error {
 	}
 
 	// Calculate the Top coordinate of the viewport.
-	b.Top = s.Height - w.Height
+	b.Window.Top = s.Height - w.Height
 
 	// Calculate the Bottom coordinate of the viewport.
-	b.Bottom = s.Height
+	b.Window.Bottom = s.Height
 
 	// Calculate the Left coordinate of the viewport.
-	b.Left = 0
+	b.Window.Left = 0
 
 	// Calculate the Right coordinate of the viewport.
-	b.Right = s.Width
+	b.Window.Right = s.Width
 
 	return nil
 }
 
 // GetBoundingClientRect returns an DOMRect struct for the given CSS selector.
+// TODO: this method can be detected by browser automation. do something smarter
+// like this: https://github.com/Xetera/ghost-cursor/blob/master/src/spoof.ts
 func (b *Browser) GetBoundingClientRect(selector string) (*DOMRect, error) {
 	// Get the bounding box of the given selector.
 	s, err := b.Evaluate(fmt.Sprintf(`
@@ -249,15 +243,15 @@ func (b *Browser) GetScreenSize() (*ScreenSize, error) {
 
 // GetIntCoordinates returns the x and y coordinates of the given DOMRect.
 func (b *Browser) GetIntCoordinates(rect *DOMRect) (int, int, error) {
-	x, y := int(rect.X+(rect.Width/2)), int(rect.Y+(rect.Height/2)+b.Top)
+	x, y := int(rect.X+(rect.Width/2)), int(rect.Y+(rect.Height/2)+b.Window.Top)
 
 	// Check if the y coordinate is between the top and bottom of the screen.
-	if y < int(b.Top) || y > int(b.Bottom) {
+	if y < int(b.Window.Top) || y > int(b.Window.Bottom) {
 		return 0, 0, fmt.Errorf("y coordinate is not between the top and bottom of the screen")
 	}
 
 	// Check if the x coordinate is between the left and right of the screen.
-	if x < int(b.Left) || x > int(b.Right) {
+	if x < int(b.Window.Left) || x > int(b.Window.Right) {
 		return 0, 0, fmt.Errorf("x coordinate is not between the left and right of the screen")
 	}
 
