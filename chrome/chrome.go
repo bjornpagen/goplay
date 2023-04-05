@@ -25,6 +25,7 @@ type Browser struct {
 	Right   float64
 	Client  *cdp.Client
 	Context context.Context
+	options *options
 }
 
 // DOMRect is a struct representing a DOMRect.
@@ -47,8 +48,30 @@ type ScreenSize struct {
 	Height float64 `json:"height"`
 }
 
+type options struct {
+	headless *bool
+}
+
+type Option func(option *options) error
+
+func WithHeadless() Option {
+	return func(option *options) error {
+		headless := true
+		option.headless = &headless
+		return nil
+	}
+}
+
 // New creates a new browser instance with the given context.
-func New(ctx context.Context) (*Browser, error) {
+func New(ctx context.Context, opts ...Option) (*Browser, error) {
+	option := &options{}
+	for _, opt := range opts {
+		err := opt(option)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	b := &Browser{
 		Top:     0,
 		Bottom:  0,
@@ -56,6 +79,7 @@ func New(ctx context.Context) (*Browser, error) {
 		Right:   0,
 		Client:  &cdp.Client{},
 		Context: ctx,
+		options: option,
 	}
 	err := b.startChrome()
 	if err != nil {
@@ -70,6 +94,11 @@ func (b *Browser) startChrome() error {
 	// Execute the following command to start Chrome with the default arguments:
 	// google-chrome --remote-debugging-port=9222 --disable-notifications --kiosk
 	var startArgs []string = []string{"--remote-debugging-port=9222", "--disable-notifications", "--kiosk"}
+
+	// Add the --headless flag if the headless option is set.
+	if b.options.headless != nil && *b.options.headless {
+		startArgs = append(startArgs, "--headless")
+	}
 
 	var chromeBinary string = "google-chrome"
 
