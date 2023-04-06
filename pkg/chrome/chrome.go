@@ -17,6 +17,8 @@ import (
 	"github.com/mafredri/cdp/rpcc"
 )
 
+var CTX context.Context
+
 // Browser is a struct that contains all the top level variables.
 type Browser struct {
 	Window  Window
@@ -67,6 +69,7 @@ func EnableMouse() Option {
 
 // New creates a new browser instance with the given context.
 func New(opts ...Option) (*Browser, error) {
+	CTX = context.TODO()
 	option := &options{}
 	for _, opt := range opts {
 		err := opt(option)
@@ -93,7 +96,6 @@ func Cleanup() {
 }
 
 func (b *Browser) Start() error {
-	ctx := context.TODO()
 	// Execute the following command to start Chrome with the default arguments:
 	// google-chrome --remote-debugging-port=9222 --disable-notifications --kiosk
 	var startArgs []string = []string{"--remote-debugging-port=9222", "--disable-notifications", "--kiosk"}
@@ -121,11 +123,11 @@ func (b *Browser) Start() error {
 
 	// Connect to Chrome.
 	devt := devtool.New("http://localhost:9222")
-	pageTarget, err := devt.Get(ctx, devtool.Page)
+	pageTarget, err := devt.Get(CTX, devtool.Page)
 	if err != nil {
 		return err
 	}
-	conn, err := rpcc.DialContext(ctx, pageTarget.WebSocketDebuggerURL)
+	conn, err := rpcc.DialContext(CTX, pageTarget.WebSocketDebuggerURL)
 	if err != nil {
 		return err
 	}
@@ -133,13 +135,13 @@ func (b *Browser) Start() error {
 	// Create a new cdp.Client.
 	b.Client = cdp.NewClient(conn)
 
-	err = b.Client.Page.Enable(ctx)
+	err = b.Client.Page.Enable(CTX)
 	if err != nil {
 		return err
 	}
 
 	// Enable the Runtime domain.
-	err = b.Client.Runtime.Enable(ctx)
+	err = b.Client.Runtime.Enable(CTX)
 	if err != nil {
 		return err
 	}
@@ -268,14 +270,13 @@ func (b *Browser) GetIntCoordinates(rect *DOMRect) (int, int, error) {
 
 // Navigate navigates to the given URL.
 func (b *Browser) Navigate(url string) error {
-	ctx := context.TODO()
 	// Navigate to the page, block until ready.
-	loadEventFired, err := b.Client.Page.LoadEventFired(b.Context)
+	loadEventFired, err := b.Client.Page.LoadEventFired(CTX)
 	if err != nil {
 		return err
 	}
 
-	_, err = b.Client.Page.Navigate(b.Context, page.NewNavigateArgs(url))
+	_, err = b.Client.Page.Navigate(CTX, page.NewNavigateArgs(url))
 	if err != nil {
 		return err
 	}
@@ -292,7 +293,7 @@ func (b *Browser) Navigate(url string) error {
 // Evaluate evaluates the given JavaScript expression.
 func (b *Browser) Evaluate(exp string) (string, error) {
 	// Evaluate the expression.
-	res, err := b.Client.Runtime.Evaluate(b.Context, runtime.NewEvaluateArgs(exp))
+	res, err := b.Client.Runtime.Evaluate(CTX, runtime.NewEvaluateArgs(exp))
 	if err != nil {
 		return "", err
 	}
