@@ -86,6 +86,18 @@ func New(ctx context.Context, opts ...Option) (*Browser, error) {
 
 // Start starts a new Chrome instance and returns a cdp.Client.
 func (b *Browser) Start() error {
+	// Spawn a goroutine that will wait for the context to be cancelled, then kills all Chrome processes.
+	go func() {
+		<-b.Context.Done()
+		var cmd *exec.Cmd
+		if goruntime.GOOS == "darwin" {
+			cmd = exec.Command("pkill", "Google Chrome")
+		} else {
+			cmd = exec.Command("pkill", "chrome")
+		}
+		cmd.Run()
+	}()
+
 	// Execute the following command to start Chrome with the default arguments:
 	// google-chrome --remote-debugging-port=9222 --disable-notifications --kiosk
 	var startArgs []string = []string{"--remote-debugging-port=9222", "--disable-notifications", "--kiosk"}
@@ -101,9 +113,8 @@ func (b *Browser) Start() error {
 		chromeBinary = os.Getenv("CHROME_BINARY")
 	}
 
-	// Start Chrome with b.Context.
-	cmd := exec.CommandContext(b.Context, chromeBinary, startArgs...)
 	// Start Chrome.
+	cmd := exec.Command(chromeBinary, startArgs...)
 	err := cmd.Start()
 	if err != nil {
 		return err
