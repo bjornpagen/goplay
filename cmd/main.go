@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"math/rand"
 	"time"
 
@@ -17,11 +16,7 @@ func main() {
 }
 
 func run() error {
-	// Create a new context that is cancelled when Chrome exits.
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	c, err := chrome.New(ctx)
+	c, err := chrome.New()
 	if err != nil {
 		return err
 	}
