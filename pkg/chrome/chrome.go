@@ -87,7 +87,7 @@ func New(ctx context.Context, opts ...Option) (*Browser, error) {
 func Cleanup() {
 	var cmd *exec.Cmd
 	if goruntime.GOOS == "darwin" {
-		cmd = exec.Command("pkill", "-f", `^(Google Chrome(?: Helper)?)(?: \(GPU\))?$`)
+		cmd = exec.Command("pkill", "-f", `Google Chrome( Helper)?( \(GPU\))?`)
 	} else {
 		cmd = exec.Command("pkill", "chrome")
 	}
