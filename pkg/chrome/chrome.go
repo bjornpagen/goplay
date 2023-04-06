@@ -96,6 +96,7 @@ func Cleanup() {
 	// run 10 times
 	for i := 0; i < 10; i++ {
 		cmd.Run()
+		time.Sleep(50 * time.Millisecond)
 	}
 }
 
