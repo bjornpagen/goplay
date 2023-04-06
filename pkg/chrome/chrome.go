@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"time"
@@ -95,7 +96,10 @@ func Cleanup() {
 
 	// run 10 times
 	for i := 0; i < 10; i++ {
-		cmd.Run()
+		err := cmd.Run()
+		if err == nil {
+			log.Fatalln(err)
+		}
 		time.Sleep(50 * time.Millisecond)
 	}
 }
