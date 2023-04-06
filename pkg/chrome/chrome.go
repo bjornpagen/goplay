@@ -92,7 +92,11 @@ func Cleanup() {
 	} else {
 		cmd = exec.Command("pkill", "chrome")
 	}
-	cmd.Run()
+
+	// run 10 times
+	for i := 0; i < 10; i++ {
+		cmd.Run()
+	}
 }
 
 func (b *Browser) Start() error {
