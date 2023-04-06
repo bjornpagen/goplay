@@ -21,7 +21,6 @@ import (
 type Browser struct {
 	Window  Window
 	Client  *cdp.Client
-	Context context.Context
 	options *options
 }
 
@@ -67,7 +66,8 @@ func EnableMouse() Option {
 }
 
 // New creates a new browser instance with the given context.
-func New(ctx context.Context, opts ...Option) (*Browser, error) {
+func New(opts ...Option) (*Browser, error) {
+	ctx := context.TODO()
 	option := &options{}
 	for _, opt := range opts {
 		err := opt(option)
@@ -79,7 +79,6 @@ func New(ctx context.Context, opts ...Option) (*Browser, error) {
 	return &Browser{
 		Window:  Window{},
 		Client:  &cdp.Client{},
-		Context: ctx,
 		options: option,
 	}, nil
 }
