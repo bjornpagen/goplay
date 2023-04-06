@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"time"
@@ -93,15 +92,7 @@ func Cleanup() {
 	} else {
 		cmd = exec.Command("pkill", "chrome")
 	}
-
-	// run 10 times
-	for i := 0; i < 10; i++ {
-		err := cmd.Run()
-		if err == nil {
-			log.Fatalln(err)
-		}
-		time.Sleep(50 * time.Millisecond)
-	}
+	cmd.Run()
 }
 
 func (b *Browser) Start() error {
