@@ -127,7 +127,7 @@ func (b *Browser) Start() error {
 	if err != nil {
 		return err
 	}
-	conn, err := rpcc.DialContext(CTX, pageTarget.WebSocketDebuggerURL)
+	conn, err := rpcc.DialContext(CTX, pageTarget.WebSocketDebuggerURL, rpcc.WithWriteBufferSize(10485760))
 	if err != nil {
 		return err
 	}
