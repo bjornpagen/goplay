@@ -84,7 +84,7 @@ func New(ctx context.Context, opts ...Option) (*Browser, error) {
 	}, nil
 }
 
-func cleanup() {
+func Cleanup() {
 	var cmd *exec.Cmd
 	if goruntime.GOOS == "darwin" {
 		cmd = exec.Command("pkill", "Google Chrome")
@@ -95,26 +95,6 @@ func cleanup() {
 }
 
 func (b *Browser) Start() error {
-	// Create a context.CancelFunc to cancel the context when the cleanup is called
-	ctx, cancel := context.WithCancel(b.Context)
-
-	// Spawn a goroutine that will wait for the context to be cancelled, then call cleanup().
-	go func() {
-		<-ctx.Done()
-		cleanup()
-	}()
-
-	err := b.startChrome()
-
-	// If there was an error starting Chrome, cancel the context
-	if err != nil {
-		cancel()
-	}
-
-	return err
-}
-
-func (b *Browser) startChrome() error {
 	// Execute the following command to start Chrome with the default arguments:
 	// google-chrome --remote-debugging-port=9222 --disable-notifications --kiosk
 	var startArgs []string = []string{"--remote-debugging-port=9222", "--disable-notifications", "--kiosk"}
