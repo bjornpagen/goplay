@@ -103,9 +103,6 @@ func (b *Browser) Start() error {
 
 	// Start Chrome with b.Context.
 	cmd := exec.CommandContext(b.Context, chromeBinary, startArgs...)
-	// Send Chrome stdout and stderr to file descriptor 2 (stderr).
-	cmd.Stdout = os.NewFile(2, "/dev/stderr")
-	cmd.Stderr = os.NewFile(2, "/dev/stderr")
 	// Start Chrome.
 	err := cmd.Start()
 	if err != nil {
@@ -146,10 +143,14 @@ func (b *Browser) Start() error {
 		return err
 	}
 
-	if b.options.mouse != nil && !*b.options.mouse {
-		return nil
+	if b.options.mouse != nil && *b.options.mouse {
+		return b.setupMouse()
 	}
 
+	return nil
+}
+
+func (b *Browser) setupMouse() error {
 	// Get the window size.
 	w, err := b.GetWindowSize()
 	if err != nil {
