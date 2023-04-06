@@ -88,9 +88,9 @@ func New(opts ...Option) (*Browser, error) {
 func Cleanup() {
 	var cmd *exec.Cmd
 	if goruntime.GOOS == "darwin" {
-		cmd = exec.Command("pkill", "-f", `Google Chrome( Helper)?( \(GPU\))?`)
+		cmd = exec.Command("pkill", "-9", "-f", `Google Chrome( Helper)?( \(GPU\))?`)
 	} else {
-		cmd = exec.Command("pkill", "chrome")
+		cmd = exec.Command("pkill", "-9", "chrome")
 	}
 	cmd.Run()
 }
