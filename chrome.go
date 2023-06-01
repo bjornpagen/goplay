@@ -20,9 +20,6 @@ import (
 	"github.com/mafredri/cdp/rpcc"
 )
 
-// also serves as a sort of mutex
-var _port uint16
-
 // Browser is a struct that contains all the top level variables.
 type Browser struct {
 	w       window
@@ -35,9 +32,18 @@ type Browser struct {
 }
 
 type options struct {
+	port uint16
 }
 
 type Option func(option *options) error
+
+// AttachToExisting attaches to an existing Chrome instance.
+func AttachToExisting(port uint16) Option {
+	return func(option *options) error {
+		option.port = port
+		return nil
+	}
+}
 
 // New creates a new browser instance with the given context.
 func New(opts ...Option) (*Browser, error) {
@@ -71,7 +77,7 @@ func (b *Browser) Close() error {
 	return nil
 }
 
-func (b *Browser) Start(ctx context.Context) error {
+func (b *Browser) execAndStart(ctx context.Context) error {
 	// Execute the following command to start Chrome with the default arguments:
 	var startArgs []string = []string{"--disable-notifications", "--kiosk"}
 	var chromeBinary string = "google-chrome"
@@ -90,13 +96,9 @@ func (b *Browser) Start(ctx context.Context) error {
 	tmpDirFlag := "--user-data-dir=" + os.TempDir()
 
 	// Reserve port
-	if _port == 0 {
-		_port = 9000
-	} else {
-		return fmt.Errorf("port is reserved")
-	}
+	b.options.port = 9000
 
-	debuggingPortFlag := "--remote-debugging-port=" + strconv.Itoa(int(_port))
+	debuggingPortFlag := "--remote-debugging-port=" + strconv.Itoa(int(b.options.port))
 
 	// Add the dynamic flags
 	startArgs = append(startArgs, tmpDirFlag, debuggingPortFlag)
@@ -114,8 +116,19 @@ func (b *Browser) Start(ctx context.Context) error {
 	// Wait for Chrome to start.
 	time.Sleep(2 * time.Second)
 
+	return nil
+}
+
+func (b *Browser) Start(ctx context.Context) error {
+	if b.options.port == 0 {
+		err := b.execAndStart(ctx)
+		if err != nil {
+			return err
+		}
+	}
+
 	// Connect to Chrome.
-	devt := devtool.New("http://localhost:" + strconv.Itoa(int(_port)))
+	devt := devtool.New("http://localhost:" + strconv.Itoa(int(b.options.port)))
 	pageTarget, err := devt.Get(ctx, devtool.Page)
 	if err != nil {
 		return err
