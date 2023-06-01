@@ -214,12 +214,12 @@ type size struct {
 }
 
 func (b *Browser) setupCoords(ctx context.Context) error {
-	w, err := b.GetWindowSize(ctx)
+	w, err := b.getWindowSize(ctx)
 	if err != nil {
 		return fmt.Errorf("get window size: %w", err)
 	}
 
-	s, err := b.GetScreenSize(ctx)
+	s, err := b.getScreenSize(ctx)
 	if err != nil {
 		return fmt.Errorf("get screen size: %w", err)
 	}
@@ -246,8 +246,8 @@ func (b *Browser) Select(ctx context.Context, selector string) (dom.NodeID, erro
 	return node.NodeID, nil
 }
 
-// GetWindowSize returns the window size.
-func (b *Browser) GetWindowSize(ctx context.Context) (m size, err error) {
+// getWindowSize returns the window size.
+func (b *Browser) getWindowSize(ctx context.Context) (m size, err error) {
 	s, err := b.Evaluate(ctx, `JSON.stringify({width: window.innerWidth, height: window.innerHeight});`)
 	if err != nil {
 		return m, err
@@ -262,8 +262,8 @@ func (b *Browser) GetWindowSize(ctx context.Context) (m size, err error) {
 	return m, nil
 }
 
-// GetScreenSize returns the screen size.
-func (b *Browser) GetScreenSize(ctx context.Context) (m size, err error) {
+// getScreenSize returns the screen size.
+func (b *Browser) getScreenSize(ctx context.Context) (m size, err error) {
 	s, err := b.Evaluate(ctx, `JSON.stringify({width: window.screen.width, height: window.screen.height});`)
 	if err != nil {
 		return m, err
@@ -278,8 +278,8 @@ func (b *Browser) GetScreenSize(ctx context.Context) (m size, err error) {
 	return m, nil
 }
 
-// GetCoords returns the x and y coordinates of the given DOMRect.
-func (b *Browser) GetCoords(rect domRect) (x, y float64) {
+// getCoords returns the x and y coordinates of the given DOMRect.
+func (b *Browser) getCoords(rect domRect) (x, y float64) {
 	return rect.X + (rect.Width / 2), rect.Y + (rect.Height / 2) + b.w.Top
 }
 
@@ -305,7 +305,7 @@ func (b *Browser) Click(ctx context.Context, id dom.NodeID) error {
 		return fmt.Errorf("get box model: %w", err)
 	}
 
-	x, y := b.GetCoords(quadToDOMRect(box.Model.Border))
+	x, y := b.getCoords(quadToDOMRect(box.Model.Border))
 	clickArgs := input.NewDispatchMouseEventArgs("mousePressed", x, y).
 		SetButton("left").
 		SetClickCount(1)
